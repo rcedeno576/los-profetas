@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   let scored = 0
 
   for (const pred of predictions) {
-    const rules = pred.pool?.rules ?? []
+    const rules = (pred.pool as any)?.rules ?? []
 
     const { total } = calculatePoints({
       predHome: pred.pred_home,
