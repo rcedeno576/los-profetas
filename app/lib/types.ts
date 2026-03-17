@@ -20,6 +20,7 @@ export type League = {
   code:   string   // 'PL', 'CL', 'WC' — exacto de football-data.org
   name:   string
   active: boolean
+  external_id?: number
 }
 
 // ─── Regla de puntuación global ────────────────────────────────────────────────
