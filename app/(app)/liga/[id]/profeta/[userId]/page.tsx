@@ -32,6 +32,8 @@ export default async function MemberPage({ params }: Props) {
   if (!profile) notFound()
 
   // Traer fixtures y predicciones del miembro
+  if (!pool.league) notFound()
+  if (!pool.league.external_id) notFound()
   const fixtures = await getFixturesByLeague(pool.league.external_id)
   const { data: predRows } = await serviceClient
     .from('predictions')
