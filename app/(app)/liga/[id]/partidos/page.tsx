@@ -20,6 +20,7 @@ export default async function PoolFixturesPage({ params }: Props) {
 
   // Traer fixtures de la liga de esta liguilla
   if (!pool.league) notFound()
+  if (!pool.league.external_id) notFound()
   const fixtures = await getFixturesByLeague(pool.league.external_id)
   const groupedStages   = groupFixturesByStage(fixtures)
   const predictions = await getUserPredictions(user.id, id)
