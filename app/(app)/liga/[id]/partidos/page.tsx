@@ -1,10 +1,10 @@
 import { createClient } from '@/app/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
 import { getFixturesByLeague, groupFixturesByStage } from '@/app/lib/queries/fixtures'
 import { getUserPredictions, getPoolPredictions } from '@/app/lib/queries/predictions'
 import FixturesTabs from '@/app/components/matches/FixturesTabs'
 import { getPoolById } from '@/app/lib/queries/pools'
+import BackButton from '@/app/components/ui/BackButton'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -32,9 +32,7 @@ export default async function PoolFixturesPage({ params }: Props) {
       {/* Header */}
       <div className="border-b border-gray-800 px-4 py-4 sticky top-0 bg-gray-950/95 backdrop-blur z-10">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <Link href={`/liga/${id}`} className="text-gray-400 hover:text-white transition-colors">
-            ←
-          </Link>
+          <BackButton fallback={`/liga/${id}`} />
           <div>
             <h1 className="text-white font-bold text-sm">{pool.name}</h1>
             <p className="text-gray-500 text-xs">{(pool.league as any)?.name} · {fixtures.length} partidos</p>

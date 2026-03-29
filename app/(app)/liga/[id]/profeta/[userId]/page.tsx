@@ -4,7 +4,7 @@ import { getPoolById } from '@/app/lib/queries/pools'
 import { getFixturesByLeague } from '@/app/lib/queries/fixtures'
 import { getAvatar } from '@/app/lib/constants'
 import { createServiceClient } from '@/app/lib/supabase/service'
-import Link from 'next/link'
+import BackButton from '@/app/components/ui/BackButton'
 import MatchCard from '@/app/components/matches/MatchCard'
 
 type Props = {
@@ -59,9 +59,7 @@ export default async function MemberPage({ params }: Props) {
       {/* Header */}
       <div className="border-b border-gray-800 px-4 py-4 sticky top-0 bg-gray-950/95 backdrop-blur z-10">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <Link href={`/liga/${id}/partidos`} className="text-gray-400 hover:text-white transition-colors">
-            ←
-          </Link>
+          <BackButton fallback={`/liga/${id}/partidos`} />
           <div className="flex items-center gap-2 flex-1">
             <span className="text-xl">{avatar.emoji}</span>
             <div>

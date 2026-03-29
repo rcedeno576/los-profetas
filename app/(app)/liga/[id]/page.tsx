@@ -8,6 +8,7 @@ import Card from '@/app/components/ui/Card'
 import Button from '@/app/components/ui/Button'
 import CopyInviteCode from './CopyInviteCode'
 import Link from 'next/link'
+import BackButton from '@/app/components/ui/BackButton'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -35,9 +36,7 @@ export default async function LiguillaPage({ params }: Props) {
       {/* Header */}
       <div className="border-b border-gray-800 px-4 py-4">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <Link href="/dashboard" className="text-gray-500 hover:text-gray-300 text-sm">
-            ← Mis liguillas
-          </Link>
+          <BackButton fallback="/dashboard" />
           {isOwner && pool.status === 'draft' && (
             <form action={async () => {
               'use server'
@@ -117,10 +116,11 @@ export default async function LiguillaPage({ params }: Props) {
                 const position = medals[index] ?? `${index + 1}.`
 
                 return (
-                  <div
+                  <Link
                     key={member.user_id}
-                    className={`flex items-center gap-3 p-3 rounded-xl
-                      ${isMe ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-gray-800/50'}`}
+                    href={`/profeta/${member.user_id}`}
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-colors
+                      ${isMe ? 'bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20' : 'bg-gray-800/50 hover:bg-gray-800'}`}
                   >
                     <span className="text-lg w-8 text-center">{position}</span>
                     <span className="text-xl">{avatar.emoji}</span>
@@ -131,7 +131,7 @@ export default async function LiguillaPage({ params }: Props) {
                       </p>
                     </div>
                     <p className="text-white font-bold">{member.total_pts} pts</p>
-                  </div>
+                  </Link>
                 )
               })}
             </div>

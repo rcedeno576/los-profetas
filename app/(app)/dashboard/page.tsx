@@ -27,13 +27,13 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="border-b border-gray-800 px-4 py-4">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link href="/perfil" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <span className="text-2xl">{avatar.emoji}</span>
             <div>
               <p className="text-white font-bold text-sm">{profile?.username}</p>
               <p className="text-gray-500 text-xs">{profile?.total_pts ?? 0} pts totales</p>
             </div>
-          </div>
+          </Link>
           <form action={logout}>
             <Button type="submit" variant="ghost" size="sm">
               Salir

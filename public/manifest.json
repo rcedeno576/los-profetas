@@ -1,0 +1,26 @@
+{
+  "name": "Los Profetas",
+  "short_name": "Profetas",
+  "description": "Plataforma de predicciones deportivas entre amigos",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#051126",
+  "theme_color": "#051126",
+  "orientation": "portrait",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icons/LosProfetas-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/LosProfetas-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
