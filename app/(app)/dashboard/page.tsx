@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { getProfile } from '@/app/lib/queries/profiles'
 import { getMyPools } from '@/app/lib/queries/pools'
 import { getAvatar, POOL_STATUS_LABEL, POOL_STATUS_COLOR } from '@/app/lib/constants'
-import { logout } from '@/app/(auth)/actions'
 import Button from '@/app/components/ui/Button'
 import Card from '@/app/components/ui/Card'
 
@@ -25,20 +24,20 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-gray-950">
 
       {/* Header */}
-      <div className="border-b border-gray-800 px-4 py-4">
+      <div className="px-4 pt-8 pb-6">
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <Link href="/perfil" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <span className="text-2xl">{avatar.emoji}</span>
-            <div>
-              <p className="text-white font-bold text-sm">{profile?.username}</p>
-              <p className="text-gray-500 text-xs">{profile?.total_pts ?? 0} pts totales</p>
+          <div>
+            <p className="text-white/50 text-sm">Bienvenido,</p>
+            <h1 className="text-white text-2xl font-bold">{profile?.username}</h1>
+            <p className="text-violet-400 text-sm font-medium mt-0.5">
+              {profile?.total_pts ?? 0} pts totales
+            </p>
+          </div>
+          <Link href="/perfil" className="hover:opacity-80 transition-opacity">
+            <div className="w-12 h-12 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-2xl">
+              {avatar.emoji}
             </div>
           </Link>
-          <form action={logout}>
-            <Button type="submit" variant="ghost" size="sm">
-              Salir
-            </Button>
-          </form>
         </div>
       </div>
 
