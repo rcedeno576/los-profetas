@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/server'
-import { MESSAGES, MAX_POOLS_PER_USER, DEFAULT_RULE_PTS } from '@/app/lib/constants'
+import { MESSAGES, MAX_POOLS_PER_USER } from '@/app/lib/constants'
 import type { ActionResult } from '@/app/lib/types'
 
 // ─── Validadores ──────────────────────────────────────────────
