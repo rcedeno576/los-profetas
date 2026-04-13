@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { AVATARS } from '@/app/lib/constants'
 import { updateProfile } from '@/app/lib/actions/profile'
+import Avatar from '@/app/components/ui/Avatar'
 
 type Props = {
   currentUsername: string
@@ -57,7 +58,7 @@ export default function EditProfileForm({ currentUsername, currentAvatarId }: Pr
                   : 'border-gray-700 bg-gray-800 hover:border-gray-600'
               }`}
             >
-              <span className="text-2xl">{avatar.emoji}</span>
+              <span className="text-2xl"><Avatar avatar={avatar} size="xl" /></span>
               <span className="text-gray-400 text-xs">{avatar.label}</span>
             </button>
           ))}

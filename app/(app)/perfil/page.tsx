@@ -2,7 +2,10 @@ import BackButton from '@/app/components/ui/BackButton'
 import { createClient } from '@/app/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getAvatar } from '@/app/lib/constants'
+import { logout } from '@/app/(auth)/actions'
+import Button from '@/app/components/ui/Button'
 import EditProfileForm from './EditProfileForm'
+import Avatar from '@/app/components/ui/Avatar'
 
 export default async function PerfilPage() {
   const supabase = await createClient()
@@ -32,7 +35,7 @@ export default async function PerfilPage() {
 
         {/* Avatar actual y stats */}
         <div className="flex items-center gap-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <span className="text-5xl">{getAvatar(profile.avatar_id).emoji}</span>
+          <span className="text-5xl"><Avatar avatar={getAvatar(profile.avatar_id)} size='xl' /></span>
           <div>
             <p className="text-white font-bold text-lg">{profile.username}</p>
             <p className="text-gray-500 text-sm">{profile.total_pts} pts totales</p>
@@ -47,6 +50,13 @@ export default async function PerfilPage() {
           currentUsername={profile.username}
           currentAvatarId={profile.avatar_id}
         />
+
+        {/* Cerrar sesión */}
+        <form action={logout}>
+          <Button type="submit" variant="danger" fullWidth>
+            Cerrar sesión
+          </Button>
+        </form>
 
       </div>
     </div>

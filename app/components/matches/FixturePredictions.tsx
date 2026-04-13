@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { getAvatar } from '@/app/lib/constants'
 import type { FixturePredictionSummary } from '@/app/lib/queries/predictions'
+import Avatar from '../ui/Avatar'
 
 type Props = {
   predictions:   FixturePredictionSummary[]
@@ -47,7 +48,7 @@ export default function FixturePredictions({ predictions, currentUserId, poolId 
                 }`}
               >
                 {/* Avatar */}
-                <span className="text-base">{avatar.emoji}</span>
+                <span className="text-base"><Avatar avatar={avatar} size='lg' /></span>
 
                 {/* Nombre */}
                 <span className={`text-xs flex-1 truncate ${isMe ? 'text-purple-300' : 'text-gray-300'}`}>

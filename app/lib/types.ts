@@ -9,9 +9,10 @@ export type Profile = {
 
 // ─── Avatar ────────────────────────────────────────────────────────────────────
 export type Avatar = {
-  id:    string
-  emoji: string
-  label: string
+  id:     string
+  emoji:  string
+  label:  string
+  image?: string  // ruta a /public/avatars/
 }
 
 // ─── Liga de fútbol ────────────────────────────────────────────────────────────

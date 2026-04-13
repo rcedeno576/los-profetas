@@ -36,7 +36,7 @@ export default function PredictionModal({ fixture, poolId, existing, onClose }: 
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-sm bg-gray-900 border border-gray-800 rounded-t-2xl sm:rounded-2xl p-6 mx-auto">
+      <div className="relative w-full max-w-sm bg-gray-900 border border-gray-800 rounded-t-2xl sm:rounded-2xl p-6 pb-10 mx-auto">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

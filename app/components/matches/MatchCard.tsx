@@ -121,14 +121,6 @@ export default function MatchCard({ fixture, userPred, predLabel, poolPrediction
         </div>
       )}
 
-      {/* Predicciones del grupo — solo en partidos finished */}
-      {isFinished && poolPredictions && currentUserId && poolId && (
-        <FixturePredictions
-          predictions={poolPredictions}
-          currentUserId={currentUserId}
-          poolId={poolId}
-        />
-      )}
     </div>
   )
 }

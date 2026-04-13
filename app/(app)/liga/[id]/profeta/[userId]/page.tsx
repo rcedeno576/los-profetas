@@ -6,6 +6,7 @@ import { getAvatar } from '@/app/lib/constants'
 import { createServiceClient } from '@/app/lib/supabase/service'
 import BackButton from '@/app/components/ui/BackButton'
 import MatchCard from '@/app/components/matches/MatchCard'
+import Avatar from '@/app/components/ui/Avatar'
 
 type Props = {
   params: Promise<{ id: string; userId: string }>
@@ -61,7 +62,7 @@ export default async function MemberPage({ params }: Props) {
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <BackButton fallback={`/liga/${id}/partidos`} />
           <div className="flex items-center gap-2 flex-1">
-            <span className="text-xl">{avatar.emoji}</span>
+            <span className="text-xl"><Avatar avatar={avatar} size='lg' /></span>
             <div>
               <h1 className="text-white font-bold text-sm">
                 {profile.username}{isMe && ' (tú)'}
