@@ -8,6 +8,7 @@ import BackButton from "@/app/components/ui/BackButton";
 import Image from "next/image";
 import Avatar from "@/app/components/ui/Avatar";
 import { createServiceClient } from "@/app/lib/supabase/service";
+import type { FixtureStatus } from "@/app/lib/types";
 
 type Props = { params: Promise<{ id: string; fixtureId: string }> };
 
@@ -105,7 +106,7 @@ export default async function FixtureDetailPage({ params }: Props) {
                 </div>
               )}
               <span
-                className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${STATUS_BG[fixture.status]}`}
+                className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${STATUS_BG[fixture.status as FixtureStatus]}`}
               >
                 {fixture.status === "live"
                   ? "● En vivo"
@@ -163,7 +164,9 @@ export default async function FixtureDetailPage({ params }: Props) {
                   </span>
 
                   {/* Avatar */}
-                  <span className="text-xl"><Avatar avatar={avatar} size="lg" /></span>
+                  <span className="text-xl">
+                    <Avatar avatar={avatar} size="lg" />
+                  </span>
 
                   {/* Nombre */}
                   <div className="flex-1 min-w-0">
