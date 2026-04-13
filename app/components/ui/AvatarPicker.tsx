@@ -1,6 +1,7 @@
 'use client'
 
 import { AVATARS } from '@/app/lib/constants'
+import Avatar from './Avatar'
 
 type Props = {
   selected:  string
@@ -26,7 +27,7 @@ export default function AvatarPicker({ selected, onChange }: Props) {
                 : 'border-gray-700 bg-gray-800 hover:border-gray-600'}
             `}
           >
-            <span className="text-2xl">{a.emoji}</span>
+            <span className="text-2xl"><Avatar avatar={a} size='xl' /></span>
             <span className="text-xs text-gray-400 mt-1">{a.label}</span>
           </button>
         ))}
