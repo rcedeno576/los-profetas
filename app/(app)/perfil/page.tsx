@@ -6,6 +6,7 @@ import { logout } from '@/app/(auth)/actions'
 import Button from '@/app/components/ui/Button'
 import EditProfileForm from './EditProfileForm'
 import Avatar from '@/app/components/ui/Avatar'
+import PushToggle from './PushToggle'
 
 export default async function PerfilPage() {
   const supabase = await createClient()
@@ -50,6 +51,9 @@ export default async function PerfilPage() {
           currentUsername={profile.username}
           currentAvatarId={profile.avatar_id}
         />
+
+        {/* Notificaciones */}
+        <PushToggle />
 
         {/* Cerrar sesión */}
         <form action={logout}>
