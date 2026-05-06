@@ -6,7 +6,9 @@ import { logout } from '@/app/(auth)/actions'
 import Button from '@/app/components/ui/Button'
 import EditProfileForm from './EditProfileForm'
 import Avatar from '@/app/components/ui/Avatar'
-import PushToggle from './PushToggle'
+import dynamic from 'next/dynamic'
+
+const PushToggle = dynamic(() => import('./PushToggle'), { ssr: false })
 
 export default async function PerfilPage() {
   const supabase = await createClient()
