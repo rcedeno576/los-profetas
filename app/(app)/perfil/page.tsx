@@ -6,9 +6,7 @@ import { logout } from '@/app/(auth)/actions'
 import Button from '@/app/components/ui/Button'
 import EditProfileForm from './EditProfileForm'
 import Avatar from '@/app/components/ui/Avatar'
-import dynamic from 'next/dynamic'
-
-const PushToggle = dynamic(() => import('./PushToggle'), { ssr: false })
+import PushToggleWrapper from './PushToggleWrapper'
 
 export default async function PerfilPage() {
   const supabase = await createClient()
@@ -55,7 +53,7 @@ export default async function PerfilPage() {
         />
 
         {/* Notificaciones */}
-        <PushToggle />
+        <PushToggleWrapper />
 
         {/* Cerrar sesión */}
         <form action={logout}>
