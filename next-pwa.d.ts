@@ -6,9 +6,7 @@ declare module 'next-pwa' {
     disable?: boolean
     register?: boolean
     skipWaiting?: boolean
-    customWorkerDir?: string
-    customWorkerDest?: string
-    customWorkerPrefix?: string
+    importScripts?: string[]
     fallbacks?: {
       document?: string
       image?: string

@@ -27,7 +27,7 @@ export default function AvatarPicker({ selected, onChange }: Props) {
                 : 'border-gray-700 bg-gray-800 hover:border-gray-600'}
             `}
           >
-            <span className="text-2xl"><Avatar avatar={a} size='xl' /></span>
+            <div className="flex justify-center"><Avatar avatar={a} size='xl' /></div>
             <span className="text-xs text-gray-400 mt-1">{a.label}</span>
           </button>
         ))}

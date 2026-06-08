@@ -1,66 +1,126 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import {
+  createPushSubscription,
+  deletePushSubscription,
+  getPushSubscription,
+  isPushSupported,
+  requestNotificationPermission,
+  savePushSubscription,
+} from '@/app/lib/push/client'
+
+type PushStatus =
+  | ''
+  | 'unsupported'
+  | 'requesting'
+  | 'checking'
+  | 'saving'
+  | 'enabled'
+  | 'disabled'
+  | 'blocked'
+  | 'error'
 
 export function usePushNotifications() {
-  const [permission, setPermission] = useState<NotificationPermission>(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      return Notification.permission
-    }
-    return 'default'
-  })
+  const [permission, setPermission] = useState<NotificationPermission>('default')
   const [subscribed, setSubscribed] = useState(false)
+  const [status, setStatus] = useState<PushStatus>('')
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
-    // Verificar si ya está suscrito al montar
-    if (!('serviceWorker' in navigator)) return
-    navigator.serviceWorker.ready.then(reg => {
-      reg.pushManager.getSubscription().then(sub => {
-        setSubscribed(!!sub)
-      })
-    })
+    let mounted = true
+
+    async function init() {
+      if (!isPushSupported()) {
+        if (!mounted) return
+        setStatus('unsupported')
+        setMessage('Este navegador no soporta notificaciones push.')
+        return
+      }
+
+      const currentPermission = Notification.permission
+      const subscription = await getPushSubscription().catch(() => null)
+
+      if (!mounted) return
+
+      setPermission(currentPermission)
+      setSubscribed(Boolean(subscription))
+
+      if (currentPermission === 'denied') {
+        setStatus('blocked')
+        setMessage('Notificaciones bloqueadas. Actívalas desde la configuración del navegador.')
+      }
+    }
+
+    init()
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   async function subscribe() {
-    if (!('serviceWorker' in navigator)) return
+    try {
+      if (!isPushSupported()) {
+        setStatus('unsupported')
+        setMessage('Este navegador no soporta notificaciones push.')
+        return
+      }
 
-    const reg = await navigator.serviceWorker.ready
-    const existing = await reg.pushManager.getSubscription()
-    if (existing) { setSubscribed(true); return }
+      setStatus('requesting')
+      setMessage('Solicitando permiso...')
 
-    const perm = await Notification.requestPermission()
-    setPermission(perm)
-    if (perm !== 'granted') return
+      const result = await requestNotificationPermission()
+      setPermission(result)
 
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-    })
+      setStatus('checking')
+      setMessage('Revisando service worker...')
 
-    const json = sub.toJSON()
-    await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(json)
-    })
+      const subscription = await createPushSubscription()
 
-    setSubscribed(true)
+      setStatus('saving')
+      setMessage('Guardando suscripción...')
+
+      await savePushSubscription(subscription)
+
+      setSubscribed(true)
+      setStatus('enabled')
+      setMessage('Notificaciones activadas correctamente.')
+    } catch (error) {
+      setStatus('error')
+      setMessage(error instanceof Error ? error.message : 'Error activando notificaciones.')
+    }
   }
 
   async function unsubscribe() {
-    const reg = await navigator.serviceWorker.ready
-    const sub = await reg.pushManager.getSubscription()
-    if (!sub) return
+    try {
+      const subscription = await getPushSubscription()
 
-    await fetch('/api/push/subscribe', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: sub.endpoint })
-    })
+      if (!subscription) {
+        setSubscribed(false)
+        setStatus('disabled')
+        setMessage('No hay una suscripción activa.')
+        return
+      }
 
-    await sub.unsubscribe()
-    setSubscribed(false)
+      await deletePushSubscription(subscription.endpoint)
+      await subscription.unsubscribe()
+
+      setSubscribed(false)
+      setStatus('disabled')
+      setMessage('Notificaciones desactivadas.')
+    } catch (error) {
+      setStatus('error')
+      setMessage(error instanceof Error ? error.message : 'Error desactivando notificaciones.')
+    }
   }
 
-  return { permission, subscribed, subscribe, unsubscribe }
+  return {
+    permission,
+    subscribed,
+    status,
+    message,
+    subscribe,
+    unsubscribe,
+  }
 }

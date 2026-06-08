@@ -7,7 +7,9 @@ import { ReactNode } from 'react'
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const isOnline = useOnlineStatus()
+
   if (!isOnline) return <OfflinePage />
+
   return (
     <>
       <div className="pb-16">

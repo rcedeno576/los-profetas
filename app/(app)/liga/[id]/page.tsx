@@ -124,7 +124,7 @@ export default async function LiguillaPage({ params }: Props) {
                       ${isMe ? 'bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20' : 'bg-gray-800/50 hover:bg-gray-800'}`}
                   >
                     <span className="text-lg w-8 text-center">{position}</span>
-                    <span className="text-xl"><Avatar avatar={avatar} size='lg'/></span>
+                    <div><Avatar avatar={avatar} size='lg'/></div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white text-sm font-medium truncate">
                         {member.username}

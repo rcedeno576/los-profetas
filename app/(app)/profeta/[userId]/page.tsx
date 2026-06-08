@@ -48,9 +48,9 @@ export default async function ProfetaPublicPage({ params }: Props) {
       <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
         {/* Perfil */}
         <div className="flex items-center gap-4 bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <span className="text-5xl">
+          <div className="shrink-0">
             <Avatar avatar={avatar} size="xl" />
-          </span>
+          </div>
           <div>
             <p className="text-white font-bold text-lg">{profile.username}</p>
             <p className="text-gray-500 text-sm">

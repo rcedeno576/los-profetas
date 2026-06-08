@@ -58,7 +58,7 @@ export default function EditProfileForm({ currentUsername, currentAvatarId }: Pr
                   : 'border-gray-700 bg-gray-800 hover:border-gray-600'
               }`}
             >
-              <span className="text-2xl"><Avatar avatar={avatar} size="xl" /></span>
+              <div className="flex justify-center"><Avatar avatar={avatar} size="xl" /></div>
               <span className="text-gray-400 text-xs">{avatar.label}</span>
             </button>
           ))}

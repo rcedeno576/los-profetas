@@ -48,8 +48,8 @@ export function mapMatch(match: ApiMatch, leagueId: number): FixtureInsert {
     // Siempre fullTime = tiempo reglamentario (90 min).
     // Si hubo tiempo extra o penales, fullTime sigue siendo el resultado
     // al min 90. `duration` es solo informativo para mostrar en la UI.
-    real_home: match.score.fullTime.home ?? null,
-    real_away: match.score.fullTime.away ?? null,
+    real_home: match.score.regularTime.home ?? null,
+    real_away: match.score.regularTime.away ?? null,
     duration:  match.score.duration      ?? null,
   }
 }

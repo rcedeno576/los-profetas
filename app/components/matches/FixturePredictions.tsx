@@ -48,7 +48,7 @@ export default function FixturePredictions({ predictions, currentUserId, poolId 
                 }`}
               >
                 {/* Avatar */}
-                <span className="text-base"><Avatar avatar={avatar} size='lg' /></span>
+                <div><Avatar avatar={avatar} size='lg' /></div>
 
                 {/* Nombre */}
                 <span className={`text-xs flex-1 truncate ${isMe ? 'text-purple-300' : 'text-gray-300'}`}>

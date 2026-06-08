@@ -360,3 +360,16 @@ export const COLORS = {
 // ─── Rutas ─────────────────────────────────────────────────────────────────────
 export const PROTECTED_ROUTES = ["/dashboard", "/liga"];
 export const AUTH_ROUTES = ["/login", "/register"];
+
+
+export const PREDICTION_LOCK_MINUTES_BEFORE_KICKOFF = 5
+
+export const UPCOMING_FIXTURE_REMINDER_MINUTES_BEFORE_KICKOFF = 15
+
+export const UPCOMING_FIXTURE_REMINDER_WINDOW_MINUTES = 5
+
+export const PUSH_NOTIFICATION_TYPES = {
+  FIXTURE_REMINDER: 'fixture_reminder',
+  SCORE_UPDATE: 'score_update',
+  GENERAL: 'general',
+} as const

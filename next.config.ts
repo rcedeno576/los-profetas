@@ -15,10 +15,10 @@ const nextConfig: NextConfig = {
 export default withPWA({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
-  register: true,
+  register: false,
   skipWaiting: true,
   fallbacks: {
     document: '/~offline',
   },
-  customWorkerDir: 'worker',
+  importScripts: ['/custom-sw.js'],
 })(nextConfig)
