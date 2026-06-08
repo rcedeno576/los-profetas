@@ -1,31 +1,38 @@
-import webpush from 'web-push'
-import { createClient } from '@/app/lib/supabase/server'
+import webpush from "web-push";
+import { createServiceClient } from "@/app/lib/supabase/service";
 
 webpush.setVapidDetails(
-  'mailto:tu@email.com',
+  "mailto:ricardocedenopaez@gmail.com",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
+  process.env.VAPID_PRIVATE_KEY!,
+);
 
 type SendPushParams = {
-  userId: string
+  userId: string;
   payload: {
-    title: string
-    body: string
-    url?: string
-    type?: string
-  }
-}
+    title: string;
+    body: string;
+    url?: string;
+    type?: string;
+  };
+};
 
 export async function sendPushToUser({ userId, payload }: SendPushParams) {
-  const supabase = await createClient()
+  // Service client is required here — this function runs from authenticated
+  // API routes (Bearer token), not from a user session. Using the regular
+  // client would return empty results due to RLS without an active session.
+  const supabase = createServiceClient();
 
   const { data: subscriptions, error } = await supabase
-    .from('push_subscriptions')
-    .select('*')
-    .eq('user_id', userId)
+    .from("push_subscriptions")
+    .select("endpoint, p256dh, auth")
+    .eq("user_id", userId);
 
-  if (error || !subscriptions?.length) return
+  if (error) {
+    throw new Error(`Failed to fetch push subscriptions: ${error.message}`);
+  }
+
+  if (!subscriptions?.length) return;
 
   await Promise.all(
     subscriptions.map(async (sub) => {
@@ -38,17 +45,22 @@ export async function sendPushToUser({ userId, payload }: SendPushParams) {
               auth: sub.auth,
             },
           },
-          JSON.stringify(payload)
-        )
+          JSON.stringify(payload),
+        );
       } catch (err: any) {
-        // 🔥 Limpieza automática si falla (muy importante)
         if (err.statusCode === 410 || err.statusCode === 404) {
+          // Subscription is no longer valid — clean it up.
           await supabase
-            .from('push_subscriptions')
+            .from("push_subscriptions")
             .delete()
-            .eq('endpoint', sub.endpoint)
+            .eq("endpoint", sub.endpoint);
+          return;
         }
+
+        // Re-throw any other error so the caller (route.ts) can catch it,
+        // increment the failed counter, and roll back the notification log.
+        throw err;
       }
-    })
-  )
+    }),
+  );
 }
