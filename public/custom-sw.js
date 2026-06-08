@@ -5,7 +5,7 @@ self.addEventListener('push', function (event) {
   const options = {
     body: data.body || 'Tienes una nueva notificación.',
     icon: data.icon || '/icons/LosProfetas-icon-192.png',
-    badge: data.badge || '/icons/LosProfetas-icon-192.png',
+    badge: data.badge || '/icons/LosProfetas-badge-icon-48.png',
     data: {
       url: data.url || '/',
       type: data.type || 'general',
