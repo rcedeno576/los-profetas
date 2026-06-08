@@ -75,10 +75,38 @@ export async function POST(req: Request) {
     });
   }
 
+  // Fetch all users with active push subscriptions once, outside the loop.
+  // Only these users can receive notifications.
+  const { data: subscriptionsData, error: subscriptionsError } = await supabase
+    .from("push_subscriptions")
+    .select("user_id");
+
+  if (subscriptionsError) {
+    return NextResponse.json(
+      { error: subscriptionsError.message },
+      { status: 500 },
+    );
+  }
+
+  const subscribedUserIds = new Set(
+    (subscriptionsData ?? []).map((s: { user_id: string }) => s.user_id),
+  );
+
+  // If nobody has push enabled, exit early.
+  if (!subscribedUserIds.size) {
+    return NextResponse.json({
+      ok: true,
+      fixtures: fixtures.length,
+      notified: 0,
+      skippedNoPushSubscription: 0,
+    });
+  }
+
   let notified = 0;
   let skippedAlreadyPredicted = 0;
   let skippedAlreadyNotified = 0;
   let skippedPredictionLocked = 0;
+  let skippedNoPushSubscription = 0;
   let failed = 0;
 
   for (const fixture of fixtures) {
@@ -96,7 +124,12 @@ export async function POST(req: Request) {
       .in("status", ["open", "active"]);
 
     if (poolsError) {
-      return NextResponse.json({ error: poolsError.message }, { status: 500 });
+      console.error(
+        `[reminder] pools error for fixture ${fixture.id}:`,
+        poolsError.message,
+      );
+      failed++;
+      continue;
     }
 
     const pools = (poolsData ?? []) as PoolReminderRow[];
@@ -111,15 +144,26 @@ export async function POST(req: Request) {
       .in("pool_id", poolIds);
 
     if (membersError) {
-      return NextResponse.json(
-        { error: membersError.message },
-        { status: 500 },
+      console.error(
+        `[reminder] members error for fixture ${fixture.id}:`,
+        membersError.message,
       );
+      failed++;
+      continue;
     }
 
     const members = (membersData ?? []) as PoolMemberReminderRow[];
 
     if (!members.length) continue;
+
+    // Filter to only members who have an active push subscription.
+    const subscribedMembers = members.filter((member) =>
+      subscribedUserIds.has(member.user_id),
+    );
+
+    skippedNoPushSubscription += members.length - subscribedMembers.length;
+
+    if (!subscribedMembers.length) continue;
 
     const { data: predictionsData, error: predictionsError } = await supabase
       .from("predictions")
@@ -128,10 +172,12 @@ export async function POST(req: Request) {
       .in("pool_id", poolIds);
 
     if (predictionsError) {
-      return NextResponse.json(
-        { error: predictionsError.message },
-        { status: 500 },
+      console.error(
+        `[reminder] predictions error for fixture ${fixture.id}:`,
+        predictionsError.message,
       );
+      failed++;
+      continue;
     }
 
     const predictions = (predictionsData ?? []) as PredictionReminderRow[];
@@ -142,12 +188,12 @@ export async function POST(req: Request) {
       ),
     );
 
-    const candidates = members.filter((member) => {
+    const candidates = subscribedMembers.filter((member) => {
       const key = `${member.user_id}:${member.pool_id}`;
       return !predictedKeys.has(key);
     });
 
-    skippedAlreadyPredicted += members.length - candidates.length;
+    skippedAlreadyPredicted += subscribedMembers.length - candidates.length;
 
     if (!candidates.length) continue;
 
@@ -159,7 +205,12 @@ export async function POST(req: Request) {
       .in("pool_id", poolIds);
 
     if (logsError) {
-      return NextResponse.json({ error: logsError.message }, { status: 500 });
+      console.error(
+        `[reminder] logs error for fixture ${fixture.id}:`,
+        logsError.message,
+      );
+      failed++;
+      continue;
     }
 
     const logs = (logsData ?? []) as PushNotificationLogReminderRow[];
@@ -177,47 +228,56 @@ export async function POST(req: Request) {
 
     if (!pending.length) continue;
 
-    for (const item of pending) {
-      const logPayload = {
-        user_id: item.user_id,
-        pool_id: item.pool_id,
-        fixture_id: fixture.id,
-        type: PUSH_NOTIFICATION_TYPES.FIXTURE_REMINDER,
-      };
+    // Process all pending notifications in parallel.
+    await Promise.all(
+      pending.map(async (item) => {
+        const logPayload = {
+          user_id: item.user_id,
+          pool_id: item.pool_id,
+          fixture_id: fixture.id,
+          type: PUSH_NOTIFICATION_TYPES.FIXTURE_REMINDER,
+        };
 
-      const { error: logError } = await supabase
-        .from("push_notification_logs")
-        .insert(logPayload);
-
-      if (logError) {
-        skippedAlreadyNotified++;
-        continue;
-      }
-
-      try {
-        await sendPushToUser({
-          userId: item.user_id,
-          payload: {
-            title: "⏰ ¡Último momento para predecir!",
-            body: `${fixture.home_name} vs ${fixture.away_name} empieza pronto. Tienes ${minutesUntilLock} min para pronosticar.`,
-            url: `/liga/${item.pool_id}/partidos`,
-            type: PUSH_NOTIFICATION_TYPES.FIXTURE_REMINDER,
-          },
-        });
-
-        notified++;
-      } catch {
-        failed++;
-
-        await supabase
+        const { error: logError } = await supabase
           .from("push_notification_logs")
-          .delete()
-          .eq("user_id", item.user_id)
-          .eq("pool_id", item.pool_id)
-          .eq("fixture_id", fixture.id)
-          .eq("type", PUSH_NOTIFICATION_TYPES.FIXTURE_REMINDER);
-      }
-    }
+          .insert(logPayload);
+
+        if (logError) {
+          // Likely a duplicate — another process already inserted this log.
+          skippedAlreadyNotified++;
+          return;
+        }
+
+        try {
+          await sendPushToUser({
+            userId: item.user_id,
+            payload: {
+              title: "⏰ ¡Último momento para predecir!",
+              body: `${fixture.home_name} vs ${fixture.away_name} empieza pronto. Tienes ${minutesUntilLock} min para pronosticar.`,
+              url: `/liga/${item.pool_id}/partidos`,
+              type: PUSH_NOTIFICATION_TYPES.FIXTURE_REMINDER,
+            },
+          });
+
+          notified++;
+        } catch (err) {
+          console.error(
+            `[reminder] push failed for user ${item.user_id}:`,
+            err,
+          );
+          failed++;
+
+          // Roll back the log so the user can be retried on the next run.
+          await supabase
+            .from("push_notification_logs")
+            .delete()
+            .eq("user_id", item.user_id)
+            .eq("pool_id", item.pool_id)
+            .eq("fixture_id", fixture.id)
+            .eq("type", PUSH_NOTIFICATION_TYPES.FIXTURE_REMINDER);
+        }
+      }),
+    );
   }
 
   return NextResponse.json({
@@ -228,5 +288,6 @@ export async function POST(req: Request) {
     skippedAlreadyPredicted,
     skippedAlreadyNotified,
     skippedPredictionLocked,
+    skippedNoPushSubscription,
   });
 }
