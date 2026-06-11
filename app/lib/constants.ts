@@ -33,6 +33,7 @@ export const AVATARS: Avatar[] = [
     image: "/avatars/19.png",
   },
   { id: "avatar_20", emoji: "🔮", label: "Murciélago", image: "/avatars/20.png" },
+  { id: "avatar_21", emoji: "💥", label: "Diablobot", image: "/avatars/21.png" },
   {
     id: "avatar_30",
     emoji: "🎮",
@@ -364,7 +365,7 @@ export const AUTH_ROUTES = ["/login", "/register"];
 
 export const PREDICTION_LOCK_MINUTES_BEFORE_KICKOFF = 5
 
-export const UPCOMING_FIXTURE_REMINDER_MINUTES_BEFORE_KICKOFF = 15
+export const UPCOMING_FIXTURE_REMINDER_MINUTES_BEFORE_KICKOFF = 30
 
 export const UPCOMING_FIXTURE_REMINDER_WINDOW_MINUTES = 5
 
