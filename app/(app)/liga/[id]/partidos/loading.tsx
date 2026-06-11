@@ -18,6 +18,7 @@ export default function LoadingPartidos() {
         <div className="flex gap-1 bg-gray-900 rounded-lg p-1 mb-6">
           <div className="flex-1 h-9 bg-gray-800 rounded-md animate-pulse" />
           <div className="flex-1 h-9 bg-gray-900 rounded-md animate-pulse" />
+          <div className="flex-1 h-9 bg-gray-900 rounded-md animate-pulse" />
         </div>
 
         {/* Stage header skeleton */}

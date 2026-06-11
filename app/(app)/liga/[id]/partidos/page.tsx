@@ -1,46 +1,58 @@
-import { createClient } from '@/app/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
-import { getFixturesByLeague, groupFixturesByStage } from '@/app/lib/queries/fixtures'
-import { getUserPredictions, getPoolPredictions } from '@/app/lib/queries/predictions'
-import FixturesTabs from '@/app/components/matches/FixturesTabs'
-import { getPoolById } from '@/app/lib/queries/pools'
-import BackButton from '@/app/components/ui/BackButton'
+import { createClient } from "@/app/lib/supabase/server";
+import { redirect, notFound } from "next/navigation";
+import {
+  getFixturesByLeague,
+  groupFixturesByStage,
+} from "@/app/lib/queries/fixtures";
+import {
+  getUserPredictions,
+  getPoolPredictions,
+} from "@/app/lib/queries/predictions";
+import FixturesTabs from "@/app/components/matches/FixturesTabs";
+import { getPoolById } from "@/app/lib/queries/pools";
+import BackButton from "@/app/components/ui/BackButton";
 
-type Props = { params: Promise<{ id: string }> }
+type Props = { params: Promise<{ id: string }> };
 
 export default async function PoolFixturesPage({ params }: Props) {
-  const { id }   = await params
-  const supabase = await createClient()
+  const { id } = await params;
+  const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  const pool = await getPoolById(id)
-  if (!pool) notFound()
+  const pool = await getPoolById(id);
+  if (!pool) notFound();
+  if (!pool.league) notFound();
+  if (!pool.league.external_id) notFound();
 
-  // Traer fixtures de la liga de esta liguilla
-  if (!pool.league) notFound()
-  if (!pool.league.external_id) notFound()
-  const fixtures = await getFixturesByLeague(pool.league.external_id)
-  const groupedStages   = groupFixturesByStage(fixtures)
-  const predictions = await getUserPredictions(user.id, id)
-  const allPredictions = await getPoolPredictions(id)
-  
+  // Run independent queries in parallel instead of sequentially.
+  const [fixtures, predictions, allPredictions] = await Promise.all([
+    getFixturesByLeague(pool.league.external_id),
+    getUserPredictions(user.id, id),
+    getPoolPredictions(id),
+  ]);
+
+  const groupedStages = groupFixturesByStage(fixtures);
+
   return (
     <div className="min-h-screen bg-gray-950">
-
       {/* Header */}
       <div className="border-b border-gray-800 px-4 py-4 sticky top-0 bg-gray-950/95 backdrop-blur z-10">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <BackButton fallback={`/liga/${id}`} />
           <div>
             <h1 className="text-white font-bold text-sm">{pool.name}</h1>
-            <p className="text-gray-500 text-xs">{(pool.league as any)?.name} · {fixtures.length} partidos</p>
+            <p className="text-gray-500 text-xs">
+              {(pool.league as any)?.name} · {fixtures.length} partidos
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Tabs: Próximos / Todos */}
+      {/* Tabs */}
       <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
         <FixturesTabs
           groupedStages={groupedStages}
@@ -51,7 +63,6 @@ export default async function PoolFixturesPage({ params }: Props) {
           currentUserId={user.id}
         />
       </div>
-
     </div>
-  )
+  );
 }
