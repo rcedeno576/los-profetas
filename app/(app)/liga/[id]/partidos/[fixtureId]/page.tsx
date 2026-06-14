@@ -180,7 +180,7 @@ export default async function FixtureDetailPage({ params }: Props) {
                     </p>
                     {!isFinished && (
                       <p className="text-gray-500 text-xs">
-                        {p.pool_pts} pts campeonato
+                        {p.pool_pts} pts en campeonato
                       </p>
                     )}
                   </div>
