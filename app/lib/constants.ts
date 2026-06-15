@@ -371,6 +371,6 @@ export const UPCOMING_FIXTURE_REMINDER_WINDOW_MINUTES = 5
 
 export const PUSH_NOTIFICATION_TYPES = {
   FIXTURE_REMINDER: 'fixture_reminder',
-  SCORE_UPDATE: 'score_update',
+  SCORE_CALCULATED: 'score_calculated',
   GENERAL: 'general',
 } as const

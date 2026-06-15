@@ -2,11 +2,11 @@ import { createClient } from "@/app/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { getPoolById } from "@/app/lib/queries/pools";
 import { getFixtureDetail } from "@/app/lib/queries/predictions";
-import { getAvatar, STATUS_BG, DURATION_LABEL } from "@/app/lib/constants";
+import { STATUS_BG, DURATION_LABEL } from "@/app/lib/constants";
 import { formatDate, formatTimeOnly } from "@/app/lib/dates";
 import BackButton from "@/app/components/ui/BackButton";
+import PredictionRow from "@/app/components/matches/PredictionRow";
 import Image from "next/image";
-import Avatar from "@/app/components/ui/Avatar";
 import { createServiceClient } from "@/app/lib/supabase/service";
 import type { FixtureStatus } from "@/app/lib/types";
 
@@ -21,30 +21,30 @@ export default async function FixtureDetailPage({ params }: Props) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const pool = await getPoolById(poolId);
+  const [pool, fixtureResult] = await Promise.all([
+    getPoolById(poolId),
+    createServiceClient()
+      .from("fixtures")
+      .select("*")
+      .eq("id", fixtureId)
+      .single(),
+  ]);
+
   if (!pool) notFound();
-
-  // Traer el fixture
-  const serviceClient = createServiceClient();
-  const { data: fixture } = await serviceClient
-    .from("fixtures")
-    .select("*")
-    .eq("id", fixtureId)
-    .single();
-
+  const fixture = fixtureResult.data;
   if (!fixture) notFound();
 
   const isFinished = fixture.status === "finished";
 
-  // Traer predicciones de todos los miembros
   let predictions = await getFixtureDetail(fixtureId, poolId);
 
-  // Ordenar según estado del partido
   if (isFinished) {
     predictions.sort((a, b) => (b.points_won ?? -1) - (a.points_won ?? -1));
   } else {
     predictions.sort((a, b) => b.pool_pts - a.pool_pts);
   }
+
+  const rules = (pool as any).rules ?? [];
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -84,13 +84,17 @@ export default async function FixtureDetailPage({ params }: Props) {
               {isFinished || fixture.status === "live" ? (
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-3xl font-bold tabular-nums ${fixture.status === "live" ? "text-emerald-400" : "text-white"}`}
+                    className={`text-3xl font-bold tabular-nums ${
+                      fixture.status === "live" ? "text-emerald-400" : "text-white"
+                    }`}
                   >
                     {fixture.real_home ?? "—"}
                   </span>
                   <span className="text-gray-600 text-xl">:</span>
                   <span
-                    className={`text-3xl font-bold tabular-nums ${fixture.status === "live" ? "text-emerald-400" : "text-white"}`}
+                    className={`text-3xl font-bold tabular-nums ${
+                      fixture.status === "live" ? "text-emerald-400" : "text-white"
+                    }`}
                   >
                     {fixture.real_away ?? "—"}
                   </span>
@@ -106,7 +110,9 @@ export default async function FixtureDetailPage({ params }: Props) {
                 </div>
               )}
               <span
-                className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${STATUS_BG[fixture.status as FixtureStatus]}`}
+                className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                  STATUS_BG[fixture.status as FixtureStatus]
+                }`}
               >
                 {fixture.status === "live"
                   ? "● En vivo"
@@ -139,80 +145,21 @@ export default async function FixtureDetailPage({ params }: Props) {
         {/* Predicciones del grupo */}
         <div>
           <h2 className="text-white font-bold mb-3">
-            {isFinished
-              ? "🏆 Resultados del grupo"
-              : "🔮 Predicciones del grupo"}
+            {isFinished ? "🏆 Resultados del grupo" : "🔮 Predicciones del grupo"}
           </h2>
           <div className="space-y-2">
-            {predictions.map((p, i) => {
-              const avatar = getAvatar(p.avatar_id);
-              const isCurrentUser = p.user_id === user.id;
-              const hasPred = p.pred_home !== null && p.pred_away !== null;
-
-              return (
-                <div
-                  key={p.user_id}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${
-                    isCurrentUser
-                      ? "bg-violet-950/40 border-violet-700/40"
-                      : "bg-gray-900 border-gray-800"
-                  }`}
-                >
-                  {/* Posición */}
-                  <span className="text-gray-500 text-xs w-4 text-center">
-                    {i + 1}
-                  </span>
-
-                  {/* Avatar */}
-                  <span className="text-xl">
-                    <Avatar avatar={avatar} size="lg" />
-                  </span>
-
-                  {/* Nombre */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium truncate">
-                      {p.username}
-                      {isCurrentUser && (
-                        <span className="text-violet-400 text-xs ml-1">
-                          (tú)
-                        </span>
-                      )}
-                    </p>
-                    {!isFinished && (
-                      <p className="text-gray-500 text-xs">
-                        {p.pool_pts} pts en campeonato
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Predicción o puntos */}
-                  <div className="text-right shrink-0">
-                    {hasPred ? (
-                      <>
-                        <p className="text-violet-400 text-sm font-bold">
-                          {p.pred_home} — {p.pred_away}
-                        </p>
-                        {isFinished && (
-                          <p
-                            className={`text-xs font-bold ${
-                              p.points_won && p.points_won > 0
-                                ? "text-emerald-400"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {p.points_won !== null
-                              ? `+${p.points_won} pts`
-                              : "Sin puntuar"}
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-gray-600 text-xs">Sin predicción</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {predictions.map((p, i) => (
+              <PredictionRow
+                key={p.user_id}
+                prediction={p}
+                position={i + 1}
+                isCurrentUser={p.user_id === user.id}
+                isFinished={isFinished}
+                realHome={fixture.real_home}
+                realAway={fixture.real_away}
+                rules={rules}
+              />
+            ))}
           </div>
         </div>
       </div>
