@@ -64,24 +64,29 @@ export default function ScoreBreakdownModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
+      /* CAMBIO: Se usa fixed top-0 left-0 w-full h-[100dvh] para forzar el viewport dinámico real en móvil */
+      className="fixed top-0 left-0 w-full h-dvh z-100 flex items-end justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-800 border-b-0 rounded-t-2xl w-full max-w-sm flex flex-col"
-        style={{ maxHeight: "80dvh" }}
+        /* CAMBIO: Eliminado paddingBottom inline molesto. Agregada la clase pb-[calc(1.5rem+env(safe-area-inset-bottom))] vía Tailwind o mantenido un max-height seguro */
+        className="bg-gray-900 border border-gray-800 border-b-0 rounded-t-2xl w-full max-w-sm overflow-y-auto overscroll-contain"
+        style={{
+          maxHeight: "85dvh", /* Aumentado un poco para que respire, ya que el viewport ahora está bien calculado */
+          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle visual */}
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
+        <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-gray-700" />
         </div>
 
-        {/* Header — fijo, no scrollea */}
-        <div className="flex items-center justify-between px-5 py-3 shrink-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3">
           <div>
             <p className="text-white font-bold">{username}</p>
-            <p className="text-gray-500 text-xs">Desglose de puntos</p>
+            <p className="text-gray-500 text-xs">Desglose de puntos {breakdown.total} - 13</p>
           </div>
           <button
             onClick={onClose}
@@ -91,10 +96,8 @@ export default function ScoreBreakdownModal({
           </button>
         </div>
 
-        {/* Contenido scrolleable */}
-        <div className="overflow-y-auto overscroll-contain flex-1 px-5 space-y-4"
-          style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
-        >
+        {/* Contenido */}
+        <div className="px-5 space-y-4 pb-4"> {/* CAMBIO: Subido un poco el padding inferior interno aquí */}
           {/* Predicción vs real */}
           <div className="flex items-center justify-center gap-6 bg-gray-800/60 rounded-xl py-3">
             <div className="text-center">
