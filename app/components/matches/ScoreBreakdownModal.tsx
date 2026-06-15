@@ -63,15 +63,13 @@ export default function ScoreBreakdownModal({
   ];
 
   return (
-    // Backdrop — ocupa toda la pantalla incluyendo el área del bottom nav
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
-      {/* Sheet — altura máxima con scroll interno */}
       <div
-        className="bg-gray-900 border border-gray-800 rounded-t-2xl w-full max-w-sm flex flex-col"
-        style={{ maxHeight: "85dvh" }}
+        className="bg-gray-900 border border-gray-800 border-b-0 rounded-t-2xl w-full max-w-sm flex flex-col"
+        style={{ maxHeight: "80dvh" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle visual */}
@@ -79,22 +77,24 @@ export default function ScoreBreakdownModal({
           <div className="w-10 h-1 rounded-full bg-gray-700" />
         </div>
 
-        {/* Contenido scrolleable */}
-        <div className="overflow-y-auto overscroll-contain px-5 pb-8 pt-2 space-y-4">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-bold">{username}</p>
-              <p className="text-gray-500 text-xs">Desglose de puntos</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-white transition-colors text-lg leading-none p-1"
-            >
-              ✕
-            </button>
+        {/* Header — fijo, no scrollea */}
+        <div className="flex items-center justify-between px-5 py-3 shrink-0">
+          <div>
+            <p className="text-white font-bold">{username}</p>
+            <p className="text-gray-500 text-xs">Desglose de puntos</p>
           </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-white transition-colors text-lg leading-none p-1"
+          >
+            ✕
+          </button>
+        </div>
 
+        {/* Contenido scrolleable */}
+        <div className="overflow-y-auto overscroll-contain flex-1 px-5 space-y-4"
+          style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+        >
           {/* Predicción vs real */}
           <div className="flex items-center justify-center gap-6 bg-gray-800/60 rounded-xl py-3">
             <div className="text-center">
@@ -129,17 +129,11 @@ export default function ScoreBreakdownModal({
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm">{row.earned ? "✅" : "❌"}</span>
-                  <span
-                    className={`text-sm ${row.earned ? "text-white" : "text-gray-500"}`}
-                  >
+                  <span className={`text-sm ${row.earned ? "text-white" : "text-gray-500"}`}>
                     {row.label}
                   </span>
                 </div>
-                <span
-                  className={`text-sm font-bold tabular-nums ${
-                    row.earned ? "text-emerald-400" : "text-gray-600"
-                  }`}
-                >
+                <span className={`text-sm font-bold tabular-nums ${row.earned ? "text-emerald-400" : "text-gray-600"}`}>
                   {row.earned ? `+${row.pts}` : "+0"}
                 </span>
               </div>
@@ -149,11 +143,7 @@ export default function ScoreBreakdownModal({
           {/* Total */}
           <div className="flex items-center justify-between border-t border-gray-800 pt-3">
             <span className="text-white font-bold">Total</span>
-            <span
-              className={`text-lg font-bold ${
-                breakdown.total > 0 ? "text-emerald-400" : "text-gray-500"
-              }`}
-            >
+            <span className={`text-lg font-bold ${breakdown.total > 0 ? "text-emerald-400" : "text-gray-500"}`}>
               +{breakdown.total} pts
             </span>
           </div>
