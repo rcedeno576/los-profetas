@@ -1,11 +1,18 @@
 import { PREDICTION_LOCK_MINUTES_BEFORE_KICKOFF } from "@/app/lib/constants";
 
-// Convierte fecha UTC a hora local del navegador
+// Zona horaria del navegador — se resuelve en runtime, no en build time.
+// Esto garantiza que la hora se muestre correcta en móviles Android/iOS
+// donde Intl sin timeZone explícito puede usar UTC en vez del timezone local.
+function localTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+
 export function formatDate(date: string): string {
   return new Intl.DateTimeFormat("es", {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: localTimeZone(),
   }).format(new Date(date));
 }
 
@@ -16,6 +23,8 @@ export function formatDateTime(date: string): string {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
+    timeZone: localTimeZone(),
   }).format(new Date(date));
 }
 
@@ -23,6 +32,8 @@ export function formatTimeOnly(date: string): string {
   return new Intl.DateTimeFormat("es", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
+    timeZone: localTimeZone(),
   }).format(new Date(date));
 }
 
