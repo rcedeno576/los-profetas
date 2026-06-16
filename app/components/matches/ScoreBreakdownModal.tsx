@@ -64,40 +64,49 @@ export default function ScoreBreakdownModal({
 
   return (
     <div
-      /* CAMBIO: Se usa fixed top-0 left-0 w-full h-[100dvh] para forzar el viewport dinámico real en móvil */
-      className="fixed top-0 left-0 w-full h-dvh z-100 flex items-end justify-center bg-black/60 backdrop-blur-sm"
+      /* 
+        CAMBIOS EN CONTENEDOR PADRE:
+        1. z-[100] para sobrepasar la barra de navegación inferior.
+        2. items-end px-4 pb-24 (en móvil flotará despegado de la barra inferior).
+        3. sm:items-center sm:p-4 (en pantallas medianas/grandes se centrará perfectamente).
+      */
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm px-4 pb-24 sm:items-center sm:p-4 transition-all duration-300"
       onClick={onClose}
     >
       <div
-        /* CAMBIO: Eliminado paddingBottom inline molesto. Agregada la clase pb-[calc(1.5rem+env(safe-area-inset-bottom))] vía Tailwind o mantenido un max-height seguro */
-        className="bg-gray-900 border border-gray-800 border-b-0 rounded-t-2xl w-full max-w-sm overflow-y-auto overscroll-contain"
+        /* 
+          CAMBIOS EN EL MODAL:
+          1. rounded-2xl en lugar de rounded-t-2xl (ahora tiene bordes redondeados abajo también ya que flota).
+          2. border-b (se agrega el borde inferior que antes faltaba).
+          3. En pantallas sm: max-height y comportamiento responsivo limpio.
+        */
+        className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-sm overflow-y-auto overscroll-contain shadow-2xl"
         style={{
-          maxHeight: "85dvh", /* Aumentado un poco para que respire, ya que el viewport ahora está bien calculado */
-          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))",
+          maxHeight: "calc(100dvh - 140px)", // Evita que choque con los extremos del viewport en móviles muy pequeños
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle visual */}
-        <div className="flex justify-center pt-3 pb-1">
+        {/* Handle visual móvil */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
           <div className="w-10 h-1 rounded-full bg-gray-700" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3">
+        <div className="flex items-center justify-between px-5 py-4 sm:pt-5">
           <div>
             <p className="text-white font-bold">{username}</p>
-            <p className="text-gray-500 text-xs">Desglose de puntos {breakdown.total} - 13</p>
+            <p className="text-gray-500 text-xs">Desglose de puntos</p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white transition-colors text-lg leading-none p-1"
+            className="text-gray-500 hover:text-white transition-colors text-lg leading-none p-1.5 bg-gray-800/40 rounded-full sm:bg-transparent"
           >
             ✕
           </button>
         </div>
 
         {/* Contenido */}
-        <div className="px-5 space-y-4 pb-4"> {/* CAMBIO: Subido un poco el padding inferior interno aquí */}
+        <div className="px-5 space-y-4 pb-5">
           {/* Predicción vs real */}
           <div className="flex items-center justify-center gap-6 bg-gray-800/60 rounded-xl py-3">
             <div className="text-center">
@@ -144,7 +153,7 @@ export default function ScoreBreakdownModal({
           </div>
 
           {/* Total */}
-          <div className="flex items-center justify-between border-t border-gray-800 pt-3">
+          <div className="flex items-center justify-between border-t border-gray-800 pt-4">
             <span className="text-white font-bold">Total</span>
             <span className={`text-lg font-bold ${breakdown.total > 0 ? "text-emerald-400" : "text-gray-500"}`}>
               +{breakdown.total} pts
