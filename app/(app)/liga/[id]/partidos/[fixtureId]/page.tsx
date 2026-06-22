@@ -9,6 +9,10 @@ import PredictionRow from "@/app/components/matches/PredictionRow";
 import Image from "next/image";
 import { createServiceClient } from "@/app/lib/supabase/service";
 import type { FixtureStatus } from "@/app/lib/types";
+import {
+  compareByPtsAndSeniority,
+  compareByPtsWonAndPtsAndSeniority,
+} from "@/app/lib/sorting";
 
 type Props = { params: Promise<{ id: string; fixtureId: string }> };
 
@@ -39,9 +43,27 @@ export default async function FixtureDetailPage({ params }: Props) {
   let predictions = await getFixtureDetail(fixtureId, poolId);
 
   if (isFinished) {
-    predictions.sort((a, b) => (b.points_won ?? -1) - (a.points_won ?? -1));
+    predictions.sort((a, b) =>
+      compareByPtsWonAndPtsAndSeniority(
+        {
+          points_won: a.points_won ?? -1,
+          total_pts: a.pool_pts,
+          joined_at: a.joined_at,
+        },
+        {
+          points_won: b.points_won ?? -1,
+          total_pts: b.pool_pts,
+          joined_at: b.joined_at,
+        },
+      ),
+    );
   } else {
-    predictions.sort((a, b) => b.pool_pts - a.pool_pts);
+    predictions.sort((a, b) =>
+      compareByPtsAndSeniority(
+        { total_pts: a.pool_pts, joined_at: a.joined_at },
+        { total_pts: b.pool_pts, joined_at: b.joined_at },
+      ),
+    );
   }
 
   const rules = (pool as any).rules ?? [];
@@ -85,7 +107,9 @@ export default async function FixtureDetailPage({ params }: Props) {
                 <div className="flex items-center gap-2">
                   <span
                     className={`text-3xl font-bold tabular-nums ${
-                      fixture.status === "live" ? "text-emerald-400" : "text-white"
+                      fixture.status === "live"
+                        ? "text-emerald-400"
+                        : "text-white"
                     }`}
                   >
                     {fixture.real_home ?? "—"}
@@ -93,7 +117,9 @@ export default async function FixtureDetailPage({ params }: Props) {
                   <span className="text-gray-600 text-xl">:</span>
                   <span
                     className={`text-3xl font-bold tabular-nums ${
-                      fixture.status === "live" ? "text-emerald-400" : "text-white"
+                      fixture.status === "live"
+                        ? "text-emerald-400"
+                        : "text-white"
                     }`}
                   >
                     {fixture.real_away ?? "—"}
@@ -145,7 +171,9 @@ export default async function FixtureDetailPage({ params }: Props) {
         {/* Predicciones del grupo */}
         <div>
           <h2 className="text-white font-bold mb-3">
-            {isFinished ? "🏆 Resultados del grupo" : "🔮 Predicciones del grupo"}
+            {isFinished
+              ? "🏆 Resultados del grupo"
+              : "🔮 Predicciones del grupo"}
           </h2>
           <div className="space-y-2">
             {predictions.map((p, i) => (

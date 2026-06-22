@@ -113,6 +113,7 @@ export type FixtureDetailPrediction = {
   pred_away: number | null;
   points_won: number | null;
   pool_pts: number; // puntos totales en el campeonato
+  joined_at: string;
 };
 
 export async function getFixtureDetail(
@@ -124,7 +125,9 @@ export async function getFixtureDetail(
   // 1. Miembros del pool con sus puntos de campeonato
   const { data: members } = await supabase
     .from("pool_members")
-    .select("user_id, total_pts, profile:profiles (username, avatar_id)")
+    .select(
+      "user_id, total_pts, joined_at, profile:profiles (username, avatar_id)",
+    )
     .eq("pool_id", poolId)
     .eq("active", true);
 
@@ -148,5 +151,6 @@ export async function getFixtureDetail(
     pred_away: predMap[m.user_id]?.pred_away ?? null,
     points_won: predMap[m.user_id]?.points_won ?? null,
     pool_pts: m.total_pts,
+    joined_at: m.joined_at,
   }));
 }

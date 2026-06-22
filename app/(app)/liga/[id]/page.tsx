@@ -10,6 +10,7 @@ import CopyInviteCode from './CopyInviteCode'
 import Link from 'next/link'
 import BackButton from '@/app/components/ui/BackButton'
 import Avatar from '@/app/components/ui/Avatar'
+import { compareByPtsAndSeniority, assignRanks, getMedalOrPosition } from '@/app/lib/sorting'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -30,6 +31,9 @@ export default async function LiguillaPage({ params }: Props) {
 
   const isOwner   = pool.owner_id === user.id
   const rules     = (pool.rules as any[]) ?? []
+
+  const sortedLeaderboard = [...leaderboard].sort(compareByPtsAndSeniority)
+  const rankedLeaderboard = assignRanks(sortedLeaderboard)
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -110,11 +114,10 @@ export default async function LiguillaPage({ params }: Props) {
             </p>
           ) : (
             <div className="space-y-2">
-              {leaderboard.map((member: any, index: number) => {
+              {rankedLeaderboard.map((member: any, index: number) => {
                 const avatar   = getAvatar(member.avatar_id ?? 'avatar_1')
                 const isMe     = member.user_id === user.id
-                const medals   = ['🥇', '🥈', '🥉']
-                const position = medals[index] ?? `${index + 1}.`
+                const position = getMedalOrPosition(member.rank, index)
 
                 return (
                   <Link
