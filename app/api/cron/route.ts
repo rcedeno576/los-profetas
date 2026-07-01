@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/app/lib/supabase/service'
+import { startLog } from '@/app/lib/cron-logger'
 import { MESSAGES } from '@/app/lib/constants'
 
 export async function GET(req: NextRequest) {
@@ -8,77 +9,73 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: MESSAGES.sync.unauthorized }, { status: 401 })
   }
 
+  const log      = startLog('cron')
   const supabase = createServiceClient()
-  const results = { synced: 0, scored: 0, errors: [] as string[] }
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-
-  // 1. Traer ligas activas
-  const { data: leagues } = await supabase
-    .from('leagues')
-    .select('id, code, external_id')
-    .eq('active', true)
-
-  if (!leagues?.length) {
-    return NextResponse.json({ message: 'Sin ligas activas', ...results })
+  const baseUrl  = process.env.NEXT_PUBLIC_APP_URL
+  const headers  = {
+    'Content-Type':  'application/json',
+    'Authorization': `Bearer ${process.env.SYNC_SECRET}`,
   }
 
-  // 2. Sync de fixtures por liga
-  for (const league of leagues) {
-    try {
-      const res = await fetch(`${baseUrl}/api/sync-fixtures`, {
+  try {
+    // 1. Traer ligas activas
+    const { data: leagues } = await supabase
+      .from('leagues')
+      .select('id, code, external_id')
+      .eq('active', true)
+
+    if (!leagues?.length) {
+      await log.skip('Sin ligas activas')
+      return NextResponse.json({ message: 'Sin ligas activas' })
+    }
+
+    // 2. Disparar sync por liga — fire and forget
+    for (const league of leagues) {
+      fetch(`${baseUrl}/api/sync-fixtures`, {
         method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${process.env.SYNC_SECRET}`,
-        },
+        headers,
         body: JSON.stringify({ leagueCode: league.code, leagueId: league.id }),
-      })
-      if (res.ok) results.synced++
-    } catch (e) {
-      results.errors.push(`Sync ${league.code}: ${e}`)
+      }).catch(() => {})
     }
-  }
 
-  // 3. Buscar predicciones sin puntuar
-  const { data: unscored } = await supabase
-    .from('predictions')
-    .select('fixture_id')
-    .is('scored_at', null)
+    // 3. Buscar predicciones sin puntuar
+    const { data: unscored } = await supabase
+      .from('predictions')
+      .select('fixture_id')
+      .is('scored_at', null)
 
-  if (!unscored?.length) {
-    return NextResponse.json({ message: 'Sin predicciones pendientes', ...results })
-  }
+    if (unscored?.length) {
+      const fixtureIds = [...new Set(unscored.map((p) => p.fixture_id))]
 
-  const fixtureIds = [...new Set(unscored.map(p => p.fixture_id))]
+      // 4. Verificar cuáles están finished
+      const { data: finishedFixtures } = await supabase
+        .from('fixtures')
+        .select('id')
+        .in('id', fixtureIds)
+        .eq('status', 'finished')
+        .not('real_home', 'is', null)
+        .not('real_away', 'is', null)
 
-  // 4. Verificar cuáles están finished
-  const { data: finishedFixtures } = await supabase
-    .from('fixtures')
-    .select('id')
-    .in('id', fixtureIds)
-    .eq('status', 'finished')
-    .not('real_home', 'is', null)
-    .not('real_away', 'is', null)
-
-  // 5. Score por cada fixture finished
-  for (const fixture of finishedFixtures ?? []) {
-    try {
-      const res = await fetch(`${baseUrl}/api/score-predictions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${process.env.SYNC_SECRET}`,
-        },
-        body: JSON.stringify({ fixture_id: fixture.id }),
-      })
-      if (res.ok) results.scored++
-    } catch (e) {
-      results.errors.push(`Score ${fixture.id}: ${e}`)
+      // 5. Disparar scoring por fixture — fire and forget
+      // score-predictions se encarga de disparar notify-scored al terminar
+      for (const fixture of finishedFixtures ?? []) {
+        fetch(`${baseUrl}/api/score-predictions`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ fixture_id: fixture.id }),
+        }).catch(() => {})
+      }
     }
-  }
 
-  return NextResponse.json({
-    message: 'Cron ejecutado correctamente',
-    ...results,
-  })
+    await log.success({ leagues: leagues.length })
+
+    return NextResponse.json({
+      message: 'Cron disparado correctamente',
+      leagues: leagues.length,
+    })
+
+  } catch (err) {
+    await log.error(err)
+    return NextResponse.json({ error: 'Error interno del cron' }, { status: 500 })
+  }
 }

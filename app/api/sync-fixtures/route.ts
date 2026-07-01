@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/app/lib/supabase/service'
 import { fetchFixtures } from '@/app/lib/api-football'
+import { startLog } from '@/app/lib/cron-logger'
 import type { FixtureInsert } from '@/app/lib/types'
 
 // ─── POST /api/sync-fixtures ───────────────────────────────────────────────────
@@ -9,7 +10,6 @@ import type { FixtureInsert } from '@/app/lib/types'
 // Sin body → sincroniza todas las ligas activas de la BD
 
 export async function POST(req: NextRequest) {
-
   const auth   = req.headers.get('Authorization') ?? ''
   const secret = process.env.SYNC_SECRET
 
@@ -39,17 +39,18 @@ export async function POST(req: NextRequest) {
     const results: Record<string, { upserted: number; error?: string }> = {}
 
     for (const league of leaguesToSync) {
+      // Un log por liga — cada una puede tener éxito o error independientemente
+      const log = startLog('sync', { leagueCode: league.code, leagueId: league.id })
+
       try {
         const fixtures: FixtureInsert[] = await fetchFixtures(league.code, league.id)
 
         if (fixtures.length === 0) {
           results[league.code] = { upserted: 0 }
+          await log.skip('Sin fixtures para sincronizar')
           continue
         }
 
-        // Upsert usando external_id como campo de conflicto
-        // Si el partido ya existe (mismo external_id) → actualiza
-        // Si no existe → inserta con nuevo UUID
         const { error: upsertError } = await supabase
           .from('fixtures')
           .upsert(fixtures, { onConflict: 'external_id' })
@@ -57,10 +58,12 @@ export async function POST(req: NextRequest) {
         if (upsertError) throw new Error(upsertError.message)
 
         results[league.code] = { upserted: fixtures.length }
+        await log.success({ upserted: fixtures.length })
 
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Error desconocido'
         results[league.code] = { upserted: 0, error: msg }
+        await log.error(err)
         console.error(`[sync-fixtures] Error en ${league.code}:`, msg)
       }
     }
