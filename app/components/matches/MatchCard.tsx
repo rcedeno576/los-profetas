@@ -17,10 +17,47 @@ type Props = {
   onClick?:         () => void
 }
 
+// Determina el ganador en 90 min para resaltar visualmente
+function getWinner(fixture: Fixture): 'home' | 'away' | 'draw' | null {
+  if (fixture.status !== 'finished') return null
+  if (fixture.real_home === null || fixture.real_away === null) return null
+  if (fixture.real_home > fixture.real_away) return 'home'
+  if (fixture.real_away > fixture.real_home) return 'away'
+  return 'draw'
+}
+
 export default function MatchCard({ fixture, userPred, predLabel, poolPredictions, currentUserId, poolId, onClick }: Props) {
-  const isFinished  = fixture.status === 'finished'
-  const isLive      = fixture.status === 'live'
-  const isScheduled = fixture.status === 'scheduled'
+  const isFinished   = fixture.status === 'finished'
+  const isLive       = fixture.status === 'live'
+  const isScheduled  = fixture.status === 'scheduled'
+  const hasExtraTime = isFinished && fixture.duration && fixture.duration !== 'REGULAR'
+  const winner       = getWinner(fixture)
+
+  // Clases de nombre según si ganó, perdió o empató
+  const homeNameClass = isFinished
+    ? winner === 'home' ? 'text-white font-bold'
+    : winner === 'away' ? 'text-gray-500'
+    : 'text-gray-400' // draw
+    : 'text-white font-medium'
+
+  const awayNameClass = isFinished
+    ? winner === 'away' ? 'text-white font-bold'
+    : winner === 'home' ? 'text-gray-500'
+    : 'text-gray-400' // draw
+    : 'text-white font-medium'
+
+  // Nombre del ganador para mostrar en penales/ET
+  const winnerName = hasExtraTime
+    ? winner === 'home' ? fixture.home_name
+    : winner === 'away' ? fixture.away_name
+    : null // empate en 90 min — el ganador lo definieron los penales
+    : null
+
+  // En penales el ganador real puede diferir del de 90 min — usamos duration
+  // para saber si hubo penales y mostramos el equipo que avanzó
+  const advancingTeam = hasExtraTime && fixture.duration === 'PENALTY_SHOOTOUT'
+    ? winnerName ?? null
+    : winnerName
 
   return (
     <div
@@ -31,7 +68,7 @@ export default function MatchCard({ fixture, userPred, predLabel, poolPrediction
         ${isLive   ? 'border-emerald-500/50 shadow-emerald-900/30 shadow-lg' : 'border-gray-800'}
       `}
     >
-      {/* Grupo (GROUP_A, etc.) si aplica */}
+      {/* Grupo si aplica */}
       {fixture.group && (
         <p className="text-xs text-gray-500 mb-2">{getGroupLabel(fixture.group)}</p>
       )}
@@ -41,8 +78,12 @@ export default function MatchCard({ fixture, userPred, predLabel, poolPrediction
 
         {/* Equipo local */}
         <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-          <TeamCrest crest={fixture.home_crest} name={fixture.home_name} />
-          <span className="text-white text-xs font-medium text-center leading-tight truncate w-full text-center">
+          <TeamCrest
+            crest={fixture.home_crest}
+            name={fixture.home_name}
+            faded={isFinished && winner === 'away'}
+          />
+          <span className={`text-xs text-center leading-tight truncate w-full text-center ${homeNameClass}`}>
             {fixture.home_name}
           </span>
         </div>
@@ -51,11 +92,21 @@ export default function MatchCard({ fixture, userPred, predLabel, poolPrediction
         <div className="flex flex-col items-center gap-1 shrink-0 w-24">
           {isFinished || isLive ? (
             <div className="flex items-center gap-2">
-              <span className={`text-2xl font-bold tabular-nums ${isLive ? 'text-emerald-400' : 'text-white'}`}>
+              <span className={`text-2xl font-bold tabular-nums ${
+                isLive       ? 'text-emerald-400'
+                : winner === 'home' ? 'text-white'
+                : winner === 'away' ? 'text-gray-500'
+                : 'text-white'
+              }`}>
                 {fixture.real_home ?? '—'}
               </span>
               <span className="text-gray-600 text-lg">:</span>
-              <span className={`text-2xl font-bold tabular-nums ${isLive ? 'text-emerald-400' : 'text-white'}`}>
+              <span className={`text-2xl font-bold tabular-nums ${
+                isLive       ? 'text-emerald-400'
+                : winner === 'away' ? 'text-white'
+                : winner === 'home' ? 'text-gray-500'
+                : 'text-white'
+              }`}>
                 {fixture.real_away ?? '—'}
               </span>
             </div>
@@ -68,28 +119,48 @@ export default function MatchCard({ fixture, userPred, predLabel, poolPrediction
 
           {/* Badge de status */}
           <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${STATUS_BG[fixture.status]}`}>
-            {isLive      ? '● En vivo'  :
-             isFinished  ? fixture.duration && fixture.duration !== 'REGULAR'
-                           ? DURATION_LABEL[fixture.duration]
-                           : 'Final'
-                         : ''}
+            {isLive ? (
+              // #4 — punto parpadeante en vivo
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                En vivo
+              </span>
+            ) : isFinished
+              ? fixture.duration && fixture.duration !== 'REGULAR'
+                ? DURATION_LABEL[fixture.duration]
+                : 'Final'
+              : ''}
           </span>
 
-          {/* Duración si fue a extra o penales */}
+          {/* #2 — aclaración 90 min + equipo que avanzó en ET/penales */}
+          {hasExtraTime && (
+            <div className="flex flex-col items-center gap-0.5">
+              <span className="text-[9px] text-gray-600">90 min</span>
+              {advancingTeam && (
+                <span className="text-[9px] text-amber-500 font-medium text-center leading-tight">
+                  Avanza {advancingTeam}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Equipo visitante */}
         <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-          <TeamCrest crest={fixture.away_crest} name={fixture.away_name} />
-          <span className="text-white text-xs font-medium text-center leading-tight truncate w-full text-center">
+          <TeamCrest
+            crest={fixture.away_crest}
+            name={fixture.away_name}
+            faded={isFinished && winner === 'home'}
+          />
+          <span className={`text-xs text-center leading-tight truncate w-full text-center ${awayNameClass}`}>
             {fixture.away_name}
           </span>
         </div>
 
       </div>
 
-      {/* Predicción del usuario si existe */}
-      {userPred !== undefined && (
+      {/* Predicción del usuario */}
+      {userPred !== undefined ? (
         <div className="mt-3 pt-3 border-t border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-purple-400 text-xs">🎯</span>
@@ -106,18 +177,20 @@ export default function MatchCard({ fixture, userPred, predLabel, poolPrediction
                 ? 'text-emerald-400'
                 : 'text-gray-500'
             }`}>
-              {userPred.points_won !== null
-                ? `+${userPred.points_won} pts`
-                : 'Sin puntuar'}
+              {userPred.points_won !== null ? `+${userPred.points_won} pts` : 'Sin puntuar'}
             </span>
           )}
         </div>
-      )}
-
-      {/* CTA para predecir si está pendiente y no hay predicción */}
-      {isScheduled && userPred === undefined && onClick && (
-        <div className="mt-3 pt-3 border-t border-gray-800 text-center">
-          <span className="text-purple-400 text-xs font-medium">Toca para predecir →</span>
+      ) : (
+        // #3 — estado claro cuando no hay predicción
+        <div className="mt-3 pt-3 border-t border-gray-800 flex items-center justify-between">
+          {isScheduled && onClick ? (
+            <span className="text-purple-400 text-xs font-medium w-full text-center">
+              Toca para predecir →
+            </span>
+          ) : isFinished ? (
+            <span className="text-gray-600 text-xs">— Sin predicción</span>
+          ) : null}
         </div>
       )}
 
@@ -126,27 +199,28 @@ export default function MatchCard({ fixture, userPred, predLabel, poolPrediction
 }
 
 // ─── Subcomponente: escudo del equipo ──────────────────────────────────────────
-function TeamCrest({ crest, name }: { crest: string | null; name: string }) {
+function TeamCrest({ crest, name, faded }: { crest: string | null; name: string; faded?: boolean }) {
+  const opacity = faded ? 'opacity-40' : 'opacity-100'
+
   if (crest) {
     return (
-      <div className="w-10 h-10 relative">
+      <div className={`w-10 h-10 relative transition-opacity ${opacity}`}>
         <Image
-        src={crest}
-        alt={name}
-        width={40}
-        height={40}
-        className="w-10 h-10 object-contain"
-        onError={(e) => {
+          src={crest}
+          alt={name}
+          width={40}
+          height={40}
+          className="w-10 h-10 object-contain"
+          onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none'
-        }}
+          }}
         />
       </div>
     )
   }
 
-  // Fallback: iniciales del equipo
   return (
-    <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+    <div className={`w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center transition-opacity ${opacity}`}>
       <span className="text-gray-400 text-xs font-bold">{name.slice(0, 2).toUpperCase()}</span>
     </div>
   )
